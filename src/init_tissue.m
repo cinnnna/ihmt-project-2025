@@ -70,16 +70,28 @@ switch name
         pars.k = 70.1;
         pars.lineshape = 'Gaussian';
         
-    case 'hc'
-        pars.free.R1 = 0.5955; % s⁻¹ (T1f ≈ 1.68 s)  %random value
-        pars.free.R2 = 5.9999; % s⁻¹ (T2f ≈ 167 ms)
+    % case 'hc'
+    %     pars.free.R1 = 0.5955; % s⁻¹ (T1f ≈ 1.68 s)  %random value
+    %     pars.free.R2 = 5.9999; % s⁻¹ (T2f ≈ 167 ms)
+    %     % ---- Semisolid (Zeeman + dipolar) pools -----------------------------
+    %     pars.semi.M0 = 0.0675; % total semisolid fraction (1–M0f)
+    %     pars.semi.R1 = 2.9780; % s⁻¹ (Zeeman pool)
+    %     pars.semi.R1D = 42.8042; % s⁻¹ (dipolar-order pool)
+    %     pars.semi.f = 0.7139; % fraction that is dipolar-coupled
+    %     pars.semi.T2 = 25.85e-6; % s (25.9 µs)
+    %     pars.k = 67.8720; % exchange rate
+    %     % ---- Lineshape ------------------------------------------------------
+    %     pars.lineshape = 'SL'; % Super-Lorentzian
+     case 'hc'
+        pars.free.R1 = 0.3; % s⁻¹ (T1f ≈ 1.68 s)  %random value
+        pars.free.R2 = 16; % s⁻¹ (T2f ≈ 167 ms)
         % ---- Semisolid (Zeeman + dipolar) pools -----------------------------
-        pars.semi.M0 = 0.0675; % total semisolid fraction (1–M0f)
-        pars.semi.R1 = 2.9780; % s⁻¹ (Zeeman pool)
-        pars.semi.R1D = 42.8042; % s⁻¹ (dipolar-order pool)
-        pars.semi.f = 0.7139; % fraction that is dipolar-coupled
-        pars.semi.T2 = 25.85e-6; % s (25.9 µs)
-        pars.k = 67.8720; % exchange rate
+        pars.semi.M0 = 0.07; % total semisolid fraction (1–M0f)
+        pars.semi.R1 = 0.3; % s⁻¹ (Zeeman pool)
+        pars.semi.R1D = 300; % s⁻¹ (dipolar-order pool)
+        pars.semi.f = 0.7; % fraction that is dipolar-coupled
+        pars.semi.T2 = 5e-6; % s (25.9 µs)
+        pars.k = 10; % exchange rate
         % ---- Lineshape ------------------------------------------------------
         pars.lineshape = 'SL'; % Super-Lorentzian
         

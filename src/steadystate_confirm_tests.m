@@ -6,7 +6,7 @@ clear; clc; close all;
 %% Same parameters as z-spectra simulation
 pulse_duration = 5; % saturation pulse duration
 npoints = 100000; % samples in the shape
-B1_max = 3.45*sqrt(2); % µT (peak B1)
+B1_max = 3.45; % µT (peak B1)
 nband = '2band';
 dt = pulse_duration/npoints; %dwell time
 shape = 'square';

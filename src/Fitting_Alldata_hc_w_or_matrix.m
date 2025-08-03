@@ -8,24 +8,24 @@ datasets = {
     % File 1: 6Khairconditioner_zspectra.mat
     {'Experimental Data/6Khairconditioner_zspectra.mat', 'db19', 'offset', '1band', 4.879, '6K hc dB19'};
     {'Experimental Data/6Khairconditioner_zspectra.mat', 'db25', 'offset', '1band', 6.9, '6K hc dB25'};
-    {'Experimental Data/6Khairconditioner_zspectra.mat', 'db31', 'offset', '1band', 3.45, '6K hc dB31'};
-    {'Experimental Data/6Khairconditioner_zspectra.mat', 'db37', 'offset', '1band', 1.7125, '6K hc dB37'};
-    {'Experimental Data/6Khairconditioner_zspectra.mat', 'db43', 'offset', '1band', 0.8625, '6K hc dB43'};
+    %{'Experimental Data/6Khairconditioner_zspectra.mat', 'db31', 'offset', '1band', 3.45, '6K hc dB31'};
+    %{'Experimental Data/6Khairconditioner_zspectra.mat', 'db37', 'offset', '1band', 1.7125, '6K hc dB37'};
+    %{'Experimental Data/6Khairconditioner_zspectra.mat', 'db43', 'offset', '1band', 0.8625, '6K hc dB43'};
     {'Experimental Data/6Khairconditioner_zspectra.mat', 'dboff', 'offset', '1band', 0, '6K hc dBoff'};
     
     % File 2: 10KHC_zpectra.mat
-    {'Experimental Data/10KHC_zpectra.mat', 'hc31dbsingle', 'offset', '1band', 3.45, '10K hc 31dB single'};
-    {'Experimental Data/10KHC_zpectra.mat', 'hc28dbdual', 'offset', '2band', 3.45*sqrt(2), '10K hc 28dB dual'};
+    %{'Experimental Data/10KHC_zpectra.mat', 'hc31dbsingle', 'offset', '1band', 3.45, '10K hc 31dB single'};
+    %{'Experimental Data/10KHC_zpectra.mat', 'hc28dbdual', 'offset', '2band', 3.45*sqrt(2), '10K hc 28dB dual'};
     
     % File 3: 0716hc2.mat
     {'Experimental Data/0716hc2.mat', 'hc19dbpos', 'offset', '1band', 4.879, '0716 hc 19dB pos'};
     {'Experimental Data/0716hc2.mat', 'hc19dbneg', 'offset', '1band', 4.879, '0716 hc 19dB neg'};
-    {'Experimental Data/0716hc2.mat', 'hc16dbdualart', 'offsetart', '2band', 4.879*sqrt(2), '0716 hc 16dB dual art'};
+    %{'Experimental Data/0716hc2.mat', 'hc16dbdualart', 'offsetart', '2band', 4.879*sqrt(2), '0716 hc 16dB dual art'};
     
     % File 4: 0716hc.mat
     {'Experimental Data/0716hc.mat', 'hc25dbpos', 'offset', '1band', 6.9, '0716 hc 25dB pos'};
     {'Experimental Data/0716hc.mat', 'hc25dbneg', 'offset', '1band', 6.9, '0716 hc 25dB neg'};
-    {'Experimental Data/0716hc.mat', 'hc22dual', 'offset', '2band', 9.75807, '0716 hc 22dB dual'};
+    %{'Experimental Data/0716hc.mat', 'hc22dual', 'offset', '2band', 9.75807, '0716 hc 22dB dual'};
 };
 
 %% Setup simulation parameters (fixed)
@@ -376,7 +376,7 @@ function Mz_vec_norm = simulate_mt_spectrum_2band(x, offset_vec, pulse_duration,
         end
         
         % Direct integration without error handling - same as your working code
-        Mz_vec_norm(k) = Dualcase_ssSPGR_ihMT_integrate(b1pulse, dt, Delta_Hz, tissuepars);
+        Mz_vec_norm(k) = newDualcase_ssSPGR_ihMT_integrate(b1pulse, dt, Delta_Hz, tissuepars);
     end
 end
 

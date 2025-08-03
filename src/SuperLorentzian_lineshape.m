@@ -91,6 +91,7 @@ if interpzero
     
     %%% now finally interpolate the required frequencies
     G = interp1(ff,G,fsample);
+    %fprintf('G = %.6e\n', G);
 end
 
 w_loc = 1/(sqrt(15)*T2s);

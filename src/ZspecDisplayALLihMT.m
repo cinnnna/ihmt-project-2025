@@ -22,7 +22,7 @@ Mz_vec_2band = zeros(size(offset_vec));
 %fprintf('Simulating 1-band case...\n');
 nband = '1band';
 shape = 'square';
-B1_max = 6.9; % µT (peak B1)
+B1_max = 3.45; % µT (peak B1)
 for k = 1:numel(offset_vec)
     delta = offset_vec(k); % positive offset
     signOff = 1; % always positive for this range
@@ -41,7 +41,7 @@ for k = 1:numel(offset_vec)
     Delta_Hz = [-delta 0 +delta];
     
     % propagate once through Bloch-McConnell
-    Mz_vec_1band(k) = ssSPGR_ihMT_integrate(b1pulse, dt, Delta_Hz, tissuepars);
+    Mz_vec_1band(k) = simplified_ssSPGR_ihMT_integrate(b1pulse, dt, Delta_Hz, tissuepars);
     
 end
 
@@ -49,7 +49,7 @@ end
 %fprintf('Simulating 2-band case...\n');
 nband = '2band';
 shape = 'square';
-B1_max = 6.9*sqrt(2) ;% µT (peak B1)
+B1_max = 3.45/sqrt(2) ;% µT (peak B1)
 for k = 1:numel(offset_vec)
     delta = offset_vec(k); % positive offset
     
@@ -69,7 +69,7 @@ for k = 1:numel(offset_vec)
     Delta_Hz = [-delta 0 +delta];
     
     % propagate once through Bloch-McConnell
-    Mz_vec_2band(k) = ssSPGR_ihMT_integrate(b1pulse, dt, Delta_Hz, tissuepars);
+    Mz_vec_2band(k) = simplified_ssSPGR_ihMT_integrate(b1pulse, dt, Delta_Hz, tissuepars);
     
 end
 

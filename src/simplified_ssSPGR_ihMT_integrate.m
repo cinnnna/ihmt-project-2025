@@ -1,4 +1,4 @@
-function [Mz_free] = ssSPGR_ihMT_integrate(b1pulse,dt,Delta_Hz,tissuepars,varargin)
+function [Mz_free] = simplified_ssSPGR_ihMT_integrate(b1pulse,dt,Delta_Hz,tissuepars,varargin)
 %%% [Mz_free] = ssSPGR_ihMT_integrate(b1pulse,dt,Delta_Hz,tissuepars,varargin)
 %
 % Steady-state ihMT SPGR sequence with eigenvector method for square pulses

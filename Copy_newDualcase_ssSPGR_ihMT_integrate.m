@@ -1,4 +1,7 @@
-function [Mz_free] = Dualcase_ssSPGR_ihMT_integrate(b1pulse,dt,Delta_Hz,tissuepars,varargin)
+function [Mz_free] = copynewDualcase_ssSPGR_ihMT_integrate_expnorm(b1pulse,dt,Delta_Hz,tissuepars,varargin)
+%%% Modified version that normalizes like experimental data
+%%% Divides by M0 calculated with B1_max = 0 (no RF pulse)
+
 %%% Unpack tissue parameters
 M0s = tissuepars.semi.M0; %<--- TOTAL semisolid fraction
 f = tissuepars.semi.f;%<--- f = fraction of semisolid pool that is dipolar-coupled
@@ -10,13 +13,28 @@ T2s = tissuepars.semi.T2;
 % Overall exchange rate for free and both semisolid pools
 k = tissuepars.k;
 
-%%% lineshape
-switch tissuepars.lineshape
-    case 'SL'
-        [G,w_loc] = SuperLorentzian_lineshape(T2s,Delta_Hz,'interpzero');% seconds
-    case 'Gaussian'
-        [G,w_loc] = gauss_lineshape(T2s,Delta_Hz);% seconds
+%% FIRST: Calculate M0 with no RF pulse (B1 = 0)
+% Create zero pulse matrix
+b1pulse_zero = zeros(size(b1pulse));
+Delta_Hz_zero = [0, 0]; % No frequency offset matters when B1=0
+
+% Calculate reference state (no RF)
+Mz_0 = calculate_steady_state(b1pulse_zero, Delta_Hz_zero, tissuepars, ...
+                              M0s, f, M0f, R1, R2f, T2s, k);
+
+%% SECOND: Calculate Mz with actual RF pulse
+Mz_with_RF = calculate_steady_state(b1pulse, Delta_Hz, tissuepars, ...
+                                   M0s, f, M0f, R1, R2f, T2s, k);
+
+%% THIRD: Normalize like experimental data (Mz/M0)
+Mz_free = Mz_with_RF / Mz_0;
+
 end
+
+function Mz_result = calculate_steady_state(b1pulse, Delta_Hz, tissuepars, ...
+                                           M0s, f, M0f, R1, R2f, T2s, k)
+%%% Helper function to calculate steady-state magnetization
+%%% Returns the raw Mz value (not normalized to M0f)
 
 % gamma for RF calculation
 gam = 267.5221; %< rad /s /uT
@@ -30,35 +48,41 @@ Lb = [-k*M0s-R1(1) k*M0f k*M0f 0;k*(1-f)*M0s -k*M0f-R1(2) 0 0;...
 Lambda = blkdiag(La,Lb);
 C = [0 0 R1(1)*M0f R1(2)*(1-f)*M0s R1(3)*f*M0s 0].';
 
-%% For square pulse, RF is constant - calculate Omega once
+%% Calculate Omega matrices
 % Take the on-resonance component for free pool
-% For free pool, we need the pulse amplitude at 0 Hz (on-resonance)
 zero_idx = find(abs(Delta_Hz) < eps); % Find which band is at 0 Hz
 if ~isempty(zero_idx)
     b1x = b1pulse(1, zero_idx(1)); % Use pulse from the 0 Hz band
 else
     b1x = 0; % No on-resonance component
 end
+OmegaFree = gam*[0 0 0;0 0 b1x;0 -b1x 0];
 
-%OmegaFree = gam*[0 0 0;0 0 b1x;0 -b1x 0];
-OmegaFree = gam*[0 0 -b1y;0 0 b1x; b1y -b1x 0];
-
-% now loop over the bands for semisolid pool - 2-BAND SYSTEM
+% Semisolid pool
 OmegaSemi = zeros(3,3);
 
-% Always process 2 bands: [-delta, 0], [-delta, +delta], or [0, +delta]
-for ii = 1:2
-    w1 = gam*abs(b1pulse(1,ii));
-    w = pi*w1^2*G(ii);
-    
-    % Special case: if Delta_Hz(ii) = 0, then D = 0 (w*D = 0)
-    if abs(Delta_Hz(ii)) < eps
-        D = 0; % w*D = 0 when delta = 0
-    else
-        D = 2*pi*Delta_Hz(ii)/w_loc;
+% Only calculate lineshape if there's actual RF power
+if any(abs(b1pulse(:)) > eps)
+    %%% lineshape
+    switch tissuepars.lineshape
+        case 'SL'
+            [G,w_loc] = SuperLorentzian_lineshape(T2s,Delta_Hz,'interpzero');% seconds
+        case 'Gaussian'
+            [G,w_loc] = gauss_lineshape(T2s,Delta_Hz);% seconds
     end
     
-    OmegaSemi = OmegaSemi + [[-w 0 0];[0 -w w*D];[0 w*D -w*D^2]];
+    % Process 2 bands
+    for ii = 1:2
+        w1 = gam*abs(b1pulse(1,ii));
+        w = pi*w1^2*G(ii);
+        % Special case: if Delta_Hz(ii) = 0, then D = 0 (w*D = 0)
+        if abs(Delta_Hz(ii)) < eps
+            D = 0; % w*D = 0 when delta = 0
+        else
+            D = 2*pi*Delta_Hz(ii)/w_loc;
+        end
+        OmegaSemi = OmegaSemi + [[-w 0 0];[0 -w w*D];[0 w*D -w*D^2]];
+    end
 end
 
 Omega = blkdiag(OmegaFree,OmegaSemi);
@@ -92,11 +116,7 @@ Mss = V(:,ind);
     %Mss = Mss/sum(abs(Mss(3:5)));
 %end
 
-% Extract free water longitudinal magnetization
-Mz_free = real(Mss(3));
-
-% Ensure result is physical (between 0 and M0f)
-%Mz_free_raw = max(0, min(M0f, Mz_free));
-%Mz_free = Mz_free_raw / M0f; %Mz normalized to M0
+% Extract free water longitudinal magnetization (RAW value, not normalized to M0f)
+Mz_result = real(Mss(3));
 
 end
