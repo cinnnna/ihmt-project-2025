@@ -5,18 +5,18 @@
 %% pulse parameters
 pulse_duration = 5; % 5 s saturation pulse
 npoints = 100000; % samples in the shape
-B1_max = 6.9; % µT (peak B1)
+B1_max = 6.9*sqrt(2); % µT (peak B1)
 nband = '2band';
 shape = 'square';
 dt = pulse_duration/npoints; %dwell time
 
 %% frequency offsets to sweep
-offset_vec = linspace(-6e3, 6e3, 63); % Hz
+offset_vec = linspace(0, 6e3, 31); % Hz
 Mz_vec = zeros(size(offset_vec)); % pre-allocate result
 
 %% tissue parameters
-tissuepars = init_tissue('hc');
-tissuepars.lineshape = 'SL';
+tissuepars = init_tissue('BSA');
+tissuepars.lineshape = 'Gaussian';
 
 %% sweep over offsets
 for k = 1:numel(offset_vec)
@@ -31,7 +31,7 @@ for k = 1:numel(offset_vec)
     % fprintf('Pulse shape (second value): %.3f + %.3fi\n', real(b1_band(2)), imag(b1_band(2)));
 
     % propagate once through Bloch-McConnell (MODIFIED FUNCTION NAME)
-    Mz_vec(k) = new_Dualcase_ssSPGR_ihMT_integrate(b1_band, dt, delta, tissuepars);
+    Mz_vec(k) = new_Dualcase_ssSPGR_ihMT_integrate(b1_band, dt, delta, tissuepars, nband);
 end
 
 

@@ -1,4 +1,4 @@
-function [Mz_free] = new_Dualcase_ssSPGR_ihMT_integrate(b1_band,dt,delta,tissuepars,varargin)
+function [Mz_free] = new_Dualcase_ssSPGR_ihMT_integrate(b1_band,dt,delta,tissuepars,nband)
 %%% Modified version using b1_band and delta
 %%% Integrates over all entries in b1_band vector
 
@@ -19,21 +19,17 @@ b1pulse_zero = zeros(size(b1_band));
 Delta_Hz_zero = 0; % No frequency offset matters when B1=0
 
 % Calculate reference state (no RF)
-Mz_0 = calculate_steady_state(b1pulse_zero, dt, Delta_Hz_zero, tissuepars, ...
-                              M0s, f, M0f, R1, R2f, T2s, k);
+Mz_0 = calculate_steady_state(b1pulse_zero, dt, Delta_Hz_zero, tissuepars,nband, M0s, f, M0f, R1, R2f, T2s, k);
 
 %% SECOND: Calculate Mz with actual RF pulse
-Mz_with_RF = calculate_steady_state(b1_band, dt, delta, tissuepars, ...
-                                   M0s, f, M0f, R1, R2f, T2s, k);
+Mz_with_RF = calculate_steady_state(b1_band, dt, delta, tissuepars,nband, M0s, f, M0f, R1, R2f, T2s, k);
 
 %% THIRD: Normalize like experimental data (Mz/M0)
 Mz_free = Mz_with_RF / Mz_0;
 
 end
 
-function Mz_out = calculate_steady_state(b1_band, dt, delta, tissuepars, ...
-                                           M0s, f, M0f, R1, R2f, T2s, k)
-B1_max = 6.9;
+function Mz_out = calculate_steady_state(b1_band, dt, delta, tissuepars,nband, M0s, f, M0f, R1, R2f, T2s, k)
 % gamma for RF calculation
 gam = 267.5221; %< rad /s /uT
 %%% lineshape - using scalar delta
@@ -69,10 +65,17 @@ for tt = 1:nt
     b1y = imag(b1_value); % Imaginary part (y-component) of complex pulse
     
     OmegaFree = gam*[0 0 -b1y; 0 0 b1x; b1y -b1x 0];
+
     
     % Semisolid pool
-    w1 = gam*abs(B1_max); % RF amplitude from complex pulse magnitude
-    w = pi*w1^2*G; % Use G directly since it's scalar
+    switch nband
+       case '1band'
+           w1 = gam*abs(b1_value); 
+       case '2band'
+           w1 = gam*(max(b1_value)/sqrt(2)); 
+    end
+
+     w = pi*w1^2*G;
     
     % Calculate frequency offset effect
     if abs(delta) == 0
@@ -80,16 +83,20 @@ for tt = 1:nt
     else
         D = 2*pi*delta/w_loc;
     end
-    
-    OmegaSemi = [[-w 0 0];[0 -w w*D];[0 w*D -w*D^2]];
+
+    % OmegaSemi calculation depends on nband
+    switch nband
+        case '1band'
+            OmegaSemi = [[-w 0 0];[0 -w w*D];[0 w*D -w*D^2]]; 
+        case '2band'
+            OmegaSemi = [[-2*w 0 0];[0 -2*w 0];[0 0 -2*w*D^2]]; 
+    end
     
     Omega = blkdiag(OmegaFree, OmegaSemi);
     
     % Make overall evolution matrix
     Atilde = cat(1, [(Lambda+Omega) C], zeros(1,7));
-    % In your calculate_steady_state function, before expm:
-    %fprintf('Computing expm, dt=%.2e, norm(Atilde)=%.2e\n', dt, norm(Atilde));
-    % Apply matrix exponential and multiply into existing matrix
+    
     Xtilde_rf = expm(Atilde*dt) * Xtilde_rf;
 end
 

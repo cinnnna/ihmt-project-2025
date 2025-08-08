@@ -6,7 +6,7 @@ clear all; close all; clc;
 %% Define EXACTLY the datasets you want (NO MORE, NO LESS)
 datasets = {
     %{'Experimental Data/6Khairconditioner_zspectra.mat', 'db19', 'offset', '1band', 4.879, '6K hc dB19'};
-    {'Experimental Data/6Khairconditioner_zspectra.mat', 'db25', 'offset', '1band', 6.9, '6K hc dB25'};
+    %{'Experimental Data/6Khairconditioner_zspectra.mat', 'db25', 'offset', '1band', 6.9, '6K hc dB25'};
     %{'Experimental Data/6Khairconditioner_zspectra.mat', 'dboff', 'offset', '1band', 0, '6K hc dBoff'};
     %{'Experimental Data/0716hc2.mat', 'hc19dbpos', 'offset', '1band', 4.879, '0716 hc 19dB pos'};
     %{'Experimental Data/0716hc2.mat', 'hc19dbneg', 'offset', '1band', 4.879, '0716 hc 19dB neg'};
@@ -17,11 +17,10 @@ datasets = {
     %{'Experimental Data/6Khairconditioner_zspectra.mat', 'db37', 'offset', '1band', 1.7125, '6K hc dB37'};
     %{'Experimental Data/6Khairconditioner_zspectra.mat', 'db43', 'offset', '1band', 0.8625, '6K hc dB43'};
     %{'Experimental Data/10KHC_zpectra.mat', 'hc31dbsingle', 'offset', '1band', 3.45, '10K hc 31dB single'};
-    %{'Experimental Data/0716hc.mat', 'hc22dual', 'offset', '2band', 9.75807, '0716 hc 22dB dual'};
+    {'Experimental Data/0716hc.mat', 'hc22dual', 'offset', '2band', 9.75807, '0716 hc 22dB dual'};
 
-    %{'Experimental Data/10KHC_zpectra.mat', 'hc28dbdual', 'offset', '2band', 3.45*sqrt(2), '10K hc 28dB dual'};
-    %{'Experimental Data/0716hc2.mat', 'hc16dbdualart', 'offsetart', '2band', 4.879*sqrt(2), '0716 hc 16dB dual art'};
-
+    {'Experimental Data/10KHC_zpectra.mat', 'hc28dbdual', 'offset', '2band', 3.45*sqrt(2), '10K hc 28dB dual'};
+    {'Experimental Data/0716hc2.mat', 'hc16dbdualart', 'offsetart', '2band', 4.879*sqrt(2), '0716 hc 16dB dual art'};
 
 };
 
@@ -33,7 +32,7 @@ shape = 'square';
 
 %% Parameter bounds
 %         R1f   R2f   M0s   R1s   R1D    f    T2s    k
-lb =     [0.2,   1,  0.01,  0.1,   1,  0.1,  5e-6,  1];
+lb =     [0.2,   1,  0.01,  0.1,   1,  1,  5e-6,  1];
 ub =     [2,    50,  0.3,   20,  100,  1,   50e-6, 50];
 param_names = {'R1_free', 'R2_free', 'M0_semi', 'R1_semi', 'R1D_semi', 'f_semi', 'T2_semi', 'k'};
 
@@ -84,6 +83,44 @@ for i = 1:length(param_names)
     fprintf('%-12s: %.6f\n', param_names{i}, X_opt(i));
 end
 
+%% Calculate correlation matrix
+% Calculate Jacobian numerically
+epsilon = 1e-6;
+n_params = length(X_opt);
+J = [];
+
+% Collect residuals at optimal parameters
+for i = 1:num_datasets
+    sim_opt = simulate_dataset(X_opt, offset_Hz{i}, pulse_duration, npoints, ...
+                               dt, nband{i}, shape, B1_max(i));
+    residuals_opt = exp_data{i} - sim_opt;
+    
+    % Calculate Jacobian for this dataset
+    J_dataset = zeros(length(residuals_opt), n_params);
+    for j = 1:n_params
+        X_perturb = X_opt;
+        X_perturb(j) = X_opt(j) + epsilon;
+        sim_perturb = simulate_dataset(X_perturb, offset_Hz{i}, pulse_duration, ...
+                                       npoints, dt, nband{i}, shape, B1_max(i));
+        J_dataset(:,j) = (exp_data{i} - sim_perturb - residuals_opt) / epsilon;
+    end
+    J = [J; J_dataset];
+end
+
+% Calculate correlation matrix
+gamma = final_cost / (length(J) - n_params);
+pCov = gamma * inv(J'*J);
+pCorr = abs(pCov ./ sqrt(diag(pCov) * diag(pCov)'));
+
+% Plot correlation matrix
+figure;
+imagesc(pCorr);
+colorbar;
+title('Parameter Correlation Matrix');
+set(gca, 'XTick', 1:n_params, 'XTickLabel', param_names);
+set(gca, 'YTick', 1:n_params, 'YTickLabel', param_names);
+xtickangle(45);
+
 %% Plot fits and calculate statistics
 figure('Position', [100, 100, 1200, 800]);
 total_sse = 0;
@@ -129,51 +166,6 @@ fprintf('\n=== OVERALL FIT QUALITY ===\n');
 fprintf('Overall RMSE: %.6f\n', overall_rmse);
 fprintf('Overall R²: %.4f\n', overall_r2);
 
-% %% Calculate parameter correlation matrix using Jacobian
-% fprintf('\n=== Calculating Correlation Matrix ===\n');
-% 
-% % try
-% % Combine all data for Jacobian calculation
-% all_exp_data = [];
-% for i = 1:num_datasets
-%     all_exp_data = [all_exp_data; exp_data{i}(:)];
-% end
-% 
-% % Function for lsqcurvefit
-% predict_fun = @(x, dummy) predict_all(x, exp_data, offset_Hz, nband, B1_max, ...
-%                                      pulse_duration, npoints, dt, shape);
-% 
-% % Get Jacobian
-% [~, ~, ~, ~, ~, ~, J] = lsqcurvefit(predict_fun, X_opt, 1, all_exp_data, ...
-%                                     [], [], optimset('Display','off'));
-% 
-% % Calculate correlation matrix
-% gamma = total_sse/(total_points - length(X_opt));
-% pCov = gamma * inv(J'*J);
-% pCorr = pCov ./ sqrt(diag(pCov) * diag(pCov)');
-% 
-% % Plot correlation matrix
-% figure('Position', [100, 100, 600, 500]);
-% imagesc(abs(pCorr));
-% colorbar;
-% colormap(hot);
-% title('Parameter Correlation Matrix');
-% set(gca, 'XTick', 1:length(param_names), 'XTickLabel', param_names, 'XTickLabelRotation', 45);
-% set(gca, 'YTick', 1:length(param_names), 'YTickLabel', param_names);
-% 
-% % Add text annotations
-% for i = 1:length(param_names)
-%     for j = 1:length(param_names)
-%         if i ~= j
-%             text(j, i, sprintf('%.2f', abs(pCorr(i,j))), ...
-%                 'HorizontalAlignment', 'center', 'Color', 'white');
-%         end
-%     end
-% end
-% 
-% % catch err
-% %     fprintf('Warning: Could not calculate correlation matrix: %s\n', err.message);
-% % end
 
 
 %% === HELPER FUNCTIONS ===
@@ -211,16 +203,6 @@ function sim_data = simulate_dataset(params, offset_vec, pulse_duration, ...
         b1_band = B1_max * pulse_shape(:);
         
         % Simulate
-        sim_data(k) = new_Dualcase_ssSPGR_ihMT_integrate(b1_band, dt, delta, tissuepars);
+        sim_data(k) = new_Dualcase_ssSPGR_ihMT_integrate(b1_band, dt, delta, tissuepars, nband);
     end
 end
-
-% function all_sim = predict_all(params, exp_data, offset_Hz, nband, B1_max, ...
-%                               pulse_duration, npoints, dt, shape)
-%     all_sim = [];
-%     for i = 1:length(exp_data)
-%         sim = simulate_dataset(params, offset_Hz{i}, pulse_duration, npoints, ...
-%                               dt, nband{i}, shape, B1_max(i));
-%         all_sim = [all_sim; sim(:)];
-%     end
-% end

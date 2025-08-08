@@ -89,7 +89,7 @@ switch name
         pars.semi.M0 = 0.07; % total semisolid fraction (1–M0f)
         pars.semi.R1 = 0.3; % s⁻¹ (Zeeman pool)
         pars.semi.R1D = 300; % s⁻¹ (dipolar-order pool)
-        pars.semi.f = 0.7; % fraction that is dipolar-coupled
+        pars.semi.f = 1; % fraction that is dipolar-coupled
         pars.semi.T2 = 5e-6; % s (25.9 µs)
         pars.k = 10; % exchange rate
         % ---- Lineshape ------------------------------------------------------
