@@ -106,7 +106,7 @@ for i = 1:num_datasets
         X_perturb(j) = X_opt(j) + epsilon;
         sim_perturb = simulate_dataset(X_perturb, offset_Hz{i}, pulse_duration, ...
                                        npoints, dt, nband{i}, shape, B1_max(i));
-        J_dataset(:,j) = (exp_data{i} - sim_perturb - residuals_opt) / epsilon;
+        J_dataset(:,j) = (sim_opt - sim_perturb) / epsilon;
     end
     J = [J; J_dataset];
 end
@@ -124,6 +124,7 @@ title('Parameter Correlation Matrix');
 set(gca, 'XTick', 1:n_params, 'XTickLabel', param_names);
 set(gca, 'YTick', 1:n_params, 'YTickLabel', param_names);
 xtickangle(45);
+set(gca, 'XDir', 'reverse');
 saveas(gcf, 'correlation_matrix.fig');
 
 %% Plot fits and calculate statistics
